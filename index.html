@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="דיווח שעות"/>
+<meta name="theme-color" content="#1D9E75"/>
+<title>דיווח שעות</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --g:#1D9E75;--g2:#0F6E56;--g3:#E1F5EE;--g4:#9FE1CB;
+  --r:#E24B4A;--r2:#FCEBEB;
+  --b:#378ADD;--b2:#E6F1FB;
+  --pu:#534AB7;--pu2:#EEEDFE;
+  --bg:#F4F3EF;--surf:#fff;
+  --brd:rgba(0,0,0,0.08);--txt:#181815;--mu:#70706D;
+  --rd:16px;--rs:11px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow-x:hidden;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--txt);font-size:15px;}
+
+.pg{display:none;min-height:100dvh;flex-direction:column;animation:fi .2s ease;}
+.pg.on{display:flex;}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.body{flex:1;padding:20px 16px 56px;max-width:480px;margin:0 auto;width:100%;}
+
+.tbar{background:var(--surf);border-bottom:1px solid var(--brd);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;}
+.tbar-t{font-size:16px;font-weight:600;}
+.tbar-b{font-size:13px;color:var(--mu);background:none;border:none;cursor:pointer;font-family:'Heebo',sans-serif;}
+
+.hero{border-radius:var(--rd);padding:26px 22px 22px;margin-bottom:16px;position:relative;overflow:hidden;}
+.hg{background:var(--g);}
+.hpu{background:var(--pu);}
+.hero::before{content:'';position:absolute;top:-44px;left:-44px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.1);}
+.hero::after{content:'';position:absolute;bottom:-28px;right:18px;width:120px;height:120px;border-radius:50%;background:rgba(0,0,0,0.07);}
+.hero-t{font-size:22px;font-weight:700;color:#fff;position:relative;line-height:1.3;}
+.hero-s{font-size:13px;color:rgba(255,255,255,0.75);margin-top:5px;position:relative;}
+
+.card{background:var(--surf);border-radius:var(--rd);border:1px solid var(--brd);padding:20px;margin-bottom:14px;}
+.clb{font-size:11px;font-weight:600;color:var(--g);letter-spacing:.08em;text-transform:uppercase;margin-bottom:13px;}
+.clb-pu{color:var(--pu);}
+
+label{font-size:13px;color:var(--mu);display:block;margin-bottom:5px;}
+input,select{width:100%;padding:12px 14px;border:1px solid var(--brd);border-radius:var(--rs);font-family:'Heebo',sans-serif;font-size:16px;color:var(--txt);background:var(--bg);margin-bottom:14px;-webkit-appearance:none;outline:none;transition:border-color .15s,background .15s;}
+input:focus,select:focus{border-color:var(--g);background:#fff;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.tc{border:1.5px solid var(--brd);border-radius:var(--rs);padding:14px 6px 11px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;-webkit-user-select:none;user-select:none;}
+.tc:active{transform:scale(0.95);}
+.tc-i{font-size:24px;display:block;margin-bottom:5px;}
+.tc-l{font-size:13px;font-weight:500;color:var(--mu);}
+.tc.aw{background:var(--g3);border-color:var(--g);} .tc.aw .tc-l{color:var(--g2);}
+.tc.as{background:var(--r2);border-color:var(--r);} .tc.as .tc-l{color:#791F1F;}
+.tc.av{background:var(--b2);border-color:var(--b);} .tc.av .tc-l{color:#0C447C;}
+.fs{display:none;}.fs.on{display:block;}
+
+.btn{display:block;width:100%;padding:14px;border-radius:var(--rs);font-family:'Heebo',sans-serif;font-size:16px;font-weight:600;cursor:pointer;border:none;text-align:center;transition:all .15s;}
+.btn:active{transform:scale(0.97);}
+.btn-g{background:var(--g);color:#fff;}
+.btn-pu{background:var(--pu);color:#fff;}
+.btn-ghost{background:transparent;color:var(--mu);font-size:14px;font-weight:400;padding:11px;}
+.btn-outline{background:var(--g3);color:var(--g2);border:1px solid var(--g4);}
+.btn-sm{width:auto;padding:8px 16px;font-size:13px;}
+.btn-red{background:var(--r2);color:var(--r);border:1px solid #F0B4B4;}
+
+.sc{text-align:center;padding:8px 0 4px;}
+.sc-c{width:72px;height:72px;background:var(--g3);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;}
+.chk{width:36px;height:36px;stroke:var(--g);stroke-width:2.5;fill:none;}
+
+.badge{display:inline-block;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500;}
+.bw{background:var(--g3);color:#085041;}.bs{background:var(--r2);color:#A32D2D;}.bv{background:var(--b2);color:#185FA5;}
+.hr{padding:13px 0;border-bottom:1px solid var(--brd);}
+.hr:last-child{border-bottom:none;}
+.mets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.met{border-radius:var(--rs);padding:14px 8px;text-align:center;}
+.mw{background:var(--g3);}.ms{background:var(--r2);}.mv{background:var(--b2);}
+.met-v{font-size:26px;font-weight:700;}
+.mw .met-v{color:#085041;}.ms .met-v{color:#A32D2D;}.mv .met-v{color:#185FA5;}
+.met-l{font-size:11px;color:var(--mu);margin-top:2px;}
+
+/* admin table */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:right;padding:8px 10px;color:var(--mu);font-weight:500;border-bottom:1px solid var(--brd);white-space:nowrap;}
+td{padding:9px 10px;border-bottom:1px solid var(--brd);}
+tr:last-child td{border-bottom:none;}
+.tbl-wrap{overflow-x:auto;margin:0 -20px;padding:0 20px;}
+
+.filter-row{display:flex;gap:8px;margin-bottom:14px;}
+.filter-row select,.filter-row input{margin-bottom:0;flex:1;}
+.seg{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:var(--rs);margin-bottom:16px;}
+.seg-b{flex:1;padding:8px 6px;font-family:'Heebo',sans-serif;font-size:13px;font-weight:400;cursor:pointer;border:none;background:transparent;color:var(--mu);border-radius:8px;transition:all .15s;}
+.seg-b.on{background:var(--surf);color:var(--txt);font-weight:500;border:1px solid var(--brd);}
+
+.spin{width:36px;height:36px;border:3px solid var(--brd);border-top-color:var(--g);border-radius:50%;animation:sp .7s linear infinite;margin:48px auto;}
+@keyframes sp{to{transform:rotate(360deg);}}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;padding:11px 22px;border-radius:99px;font-size:14px;z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;white-space:nowrap;max-width:88vw;text-align:center;}
+#toast.on{opacity:1;}#toast.ok{background:var(--g);}#toast.er{background:var(--r);}
+.empty{text-align:center;padding:36px 16px;color:var(--mu);font-size:14px;}
+
+/* admin link */
+.admin-link{text-align:center;margin-top:12px;}
+.admin-link a{font-size:12px;color:var(--mu);text-decoration:none;}
+
+/* file upload */
+.upload-zone{border:1.5px dashed var(--brd);border-radius:var(--rs);padding:18px 14px;text-align:center;cursor:pointer;background:var(--bg);transition:all .15s;margin-bottom:14px;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--g);background:var(--g3);}
+.upload-zone-i{font-size:28px;margin-bottom:6px;}
+.upload-zone-t{font-size:13px;color:var(--mu);}
+.upload-zone-t span{color:var(--g);font-weight:500;}
+input[type=file]{display:none;}
+.file-preview{display:flex;align-items:center;gap:10px;background:var(--g3);border-radius:var(--rs);padding:10px 14px;margin-bottom:14px;}
+.file-preview-icon{font-size:22px;}
+.file-preview-name{flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.file-remove{background:none;border:none;font-size:18px;color:var(--mu);cursor:pointer;padding:0 4px;}
+.file-link{color:var(--g);font-size:13px;text-decoration:none;}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- ══ הרשמה ══ -->
+<div class="pg" id="pg-reg">
+<div class="body">
+  <div class="hero hg" style="margin-top:8px">
+    <div class="hero-t">ברוכים הבאים 👋</div>
+    <div class="hero-s">מלאו את שמכם פעם אחת — הטלפון יזכור אתכם</div>
+  </div>
+  <div class="card">
+    <div class="clb">פרטי עובד</div>
+    <div class="r2">
+      <div><label>שם פרטי</label><input type="text" id="r-first" placeholder="ישראל" autocomplete="given-name"/></div>
+      <div><label>שם משפחה</label><input type="text" id="r-last" placeholder="ישראלי" autocomplete="family-name"/></div>
+    </div>
+    <button class="btn btn-g" onclick="register()">התחל לדווח ←</button>
+  </div>
+  <div class="admin-link"><a href="?admin=1">כניסת מנהל</a></div>
+</div>
+</div>
+
+<!-- ══ טעינה ══ -->
+<div class="pg" id="pg-load">
+<div class="body">
+  <div style="margin-top:80px"><div class="spin"></div></div>
+</div>
+</div>
+
+<!-- ══ דיווח ══ -->
+<div class="pg" id="pg-rep">
+<div class="body">
+  <div class="hero hg" style="margin-top:8px">
+    <div class="hero-t" id="rep-name"></div>
+    <div class="hero-s" id="rep-date"></div>
+  </div>
+  <div class="card">
+    <div class="clb">סוג דיווח</div>
+    <div class="tgrid">
+      <div class="tc aw" id="tc-w" onclick="selT('work')"><span class="tc-i">🕐</span><span class="tc-l">נוכחות</span></div>
+      <div class="tc"    id="tc-s" onclick="selT('sick')"><span class="tc-i">🤒</span><span class="tc-l">מחלה</span></div>
+      <div class="tc"    id="tc-v" onclick="selT('vac')" ><span class="tc-i">🏖️</span><span class="tc-l">חופש</span></div>
+    </div>
+    <div class="fs on" id="fs-w">
+      <div class="r2">
+        <div><label>שעת כניסה</label><input type="time" id="t-in"/></div>
+        <div><label>שעת יציאה</label><input type="time" id="t-out"/></div>
+      </div>
+      <label>הערה (אופציונלי)</label>
+      <input type="text" id="n-w" placeholder="עבודה מהבית, כנס..."/>
+      <label>צרף קובץ (אופציונלי)</label>
+      <label class="upload-zone" ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'w')">
+        <div class="upload-zone-i">📎</div>
+        <div class="upload-zone-t">גרור קובץ לכאן או <span>לחץ לבחירה</span></div>
+        <input type="file" id="f-w" onchange="fileChosen(this,'w')" style="display:none"/>
+      </label>
+      <div id="fp-w"></div>
+    </div>
+    <div class="fs" id="fs-s">
+      <div class="r2">
+        <div><label>מתאריך</label><input type="date" id="s-f"/></div>
+        <div><label>עד תאריך</label><input type="date" id="s-t"/></div>
+      </div>
+      <label>הערה</label>
+      <input type="text" id="n-s" placeholder="מחלת ילדים..."/>
+      <label>צרף קובץ (אופציונלי)</label>
+      <label class="upload-zone" ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'s')">
+        <div class="upload-zone-i">📎</div>
+        <div class="upload-zone-t">גרור קובץ לכאן או <span>לחץ לבחירה</span></div>
+        <input type="file" id="f-s" onchange="fileChosen(this,'s')" style="display:none"/>
+      </label>
+      <div id="fp-s"></div>
+    </div>
+    <div class="fs" id="fs-v">
+      <div class="r2">
+        <div><label>מתאריך</label><input type="date" id="v-f"/></div>
+        <div><label>עד תאריך</label><input type="date" id="v-t"/></div>
+      </div>
+      <label>הערה</label>
+      <input type="text" id="n-v" placeholder="חופש שנתי..."/>
+      <label>צרף קובץ (אופציונלי)</label>
+      <label class="upload-zone" ondragover="dragOver(event,this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'v')">
+        <div class="upload-zone-i">📎</div>
+        <div class="upload-zone-t">גרור קובץ לכאן או <span>לחץ לבחירה</span></div>
+        <input type="file" id="f-v" onchange="fileChosen(this,'v')" style="display:none"/>
+      </label>
+      <div id="fp-v"></div>
+    </div>
+    <div style="height:4px"></div>
+    <button class="btn btn-g" onclick="submitReport()">שמור דיווח</button>
+    <button class="btn btn-ghost" onclick="goHist()">הצג דיווחים קודמים</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ הצלחה ══ -->
+<div class="pg" id="pg-ok">
+<div class="body">
+  <div class="card" style="text-align:center;padding:36px 20px;margin-top:8px">
+    <div class="sc">
+      <div class="sc-c"><svg class="chk" viewBox="0 0 36 36"><polyline points="7,19 15,27 29,10"/></svg></div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px">הדיווח נשמר!</div>
+      <p style="font-size:14px;color:var(--mu);margin-bottom:26px;line-height:1.6" id="ok-msg"></p>
+      <button class="btn btn-outline" onclick="backRep()">דיווח נוסף</button>
+      <button class="btn btn-ghost" style="margin-top:6px" onclick="goHist()">ראה היסטוריה</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ היסטוריה עובד ══ -->
+<div class="pg" id="pg-hist">
+  <div class="tbar">
+    <span class="tbar-t" id="hist-t">הדיווחים שלי</span>
+    <button class="tbar-b" onclick="backRep()">→ חזרה לדיווח</button>
+  </div>
+  <div class="body" style="padding-top:8px">
+    <div class="mets" id="hist-met"></div>
+    <div class="card" style="padding:0 20px" id="hist-list"></div>
+    <div class="empty" id="hist-empty" style="display:none">אין דיווחים עדיין</div>
+  </div>
+</div>
+
+<!-- ══ מנהל — כניסה ══ -->
+<div class="pg" id="pg-adm-login">
+<div class="body">
+  <div class="hero hpu" style="margin-top:8px">
+    <div class="hero-t">ממשק מנהל 👩‍💼</div>
+    <div class="hero-s">מערכת דיווח שעות</div>
+  </div>
+  <div class="card">
+    <div class="clb clb-pu">כניסה</div>
+    <label>סיסמה</label>
+    <input type="password" id="adm-pass" placeholder="••••••••"/>
+    <button class="btn btn-pu" onclick="adminLogin()">כניסה</button>
+    <button class="btn btn-ghost" onclick="go('pg-reg')">→ חזרה</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ מנהל — דשבורד ══ -->
+<div class="pg" id="pg-adm">
+  <div class="tbar">
+    <span class="tbar-t">לוח בקרה</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm btn-outline" onclick="exportCSV()">ייצוא CSV ↓</button>
+      <button class="tbar-b" onclick="go('pg-reg')">יציאה</button>
+    </div>
+  </div>
+  <div class="body" style="padding-top:8px">
+    <div class="mets" id="adm-met"></div>
+    <div class="card">
+      <div class="seg">
+        <button class="seg-b on" onclick="admTab('all',this)">כל הדיווחים</button>
+        <button class="seg-b" onclick="admTab('emp',this)">לפי עובד</button>
+      </div>
+      <!-- all -->
+      <div id="tab-all">
+        <div class="filter-row">
+          <select id="f-type" onchange="renderAll()">
+            <option value="">כל הסוגים</option>
+            <option value="נוכחות">נוכחות</option>
+            <option value="מחלה">מחלה</option>
+            <option value="חופש">חופש</option>
+          </select>
+          <input type="month" id="f-month" onchange="renderAll()"/>
+        </div>
+        <div class="tbl-wrap" id="all-wrap"></div>
+      </div>
+      <!-- by emp -->
+      <div id="tab-emp" style="display:none">
+        <div class="filter-row" style="margin-bottom:14px">
+          <select id="f-emp" onchange="renderEmp()">
+            <option value="">בחר עובד</option>
+          </select>
+        </div>
+        <div id="emp-wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════ הגדרות ════════════
+const SB_URL  = "https://fxfhzaisiyuvgpqzegrr.supabase.co";
+const SB_KEY  = "sb_publishable_r6cytijIwJocYXU2qyZ7Fw_F98c0t7r";
+const ADM_PWD = "admin1234"; // ← שנו לסיסמה חזקה!
+// ════════════════════════════════
+
+const { createClient } = supabase;
+const sb = createClient(SB_URL, SB_KEY);
+
+const LS_EMP = 'hr_emp_v2';
+let EMP  = localStorage.getItem(LS_EMP) || '';
+let TYPE = 'work';
+let ALL_REPORTS = [];
+
+// ── boot ──
+(function(){
+  const p = new URLSearchParams(location.search);
+  if (p.get('admin') === '1') { go('pg-adm-login'); return; }
+  if (EMP) { initRep(); go('pg-rep'); }
+  else go('pg-reg');
+})();
+
+function go(id){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0,0);
+}
+function backRep(){ initRep(); go('pg-rep'); }
+function goHist(){ loadHist(); }
+
+// ── הרשמה ──
+function register(){
+  const f=document.getElementById('r-first').value.trim();
+  const l=document.getElementById('r-last').value.trim();
+  if(!f||!l){toast('נא למלא שם פרטי ושם משפחה','er');return;}
+  EMP=f+' '+l;
+  localStorage.setItem(LS_EMP,EMP);
+  initRep(); go('pg-rep');
+}
+
+// ── טופס ──
+function initRep(){
+  const now=new Date();
+  document.getElementById('rep-name').textContent='שלום, '+EMP+' 👋';
+  document.getElementById('rep-date').textContent=
+    now.toLocaleDateString('he-IL',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('t-in').value=now.toTimeString().slice(0,5);
+  document.getElementById('t-out').value='';
+  ['n-w','n-s','n-v'].forEach(id=>document.getElementById(id).value='');
+  const td=now.toISOString().split('T')[0];
+  ['s-f','s-t','v-f','v-t'].forEach(id=>document.getElementById(id).value=td);
+  selT('work');
+}
+
+function selT(t){
+  TYPE=t;
+  const M={work:'w',sick:'s',vac:'v'};
+  const C={work:'aw',sick:'as',vac:'av'};
+  ['work','sick','vac'].forEach(k=>{
+    const on=k===t;
+    document.getElementById('tc-'+M[k]).className='tc'+(on?' '+C[k]:'');
+    document.getElementById('fs-'+M[k]).className='fs'+(on?' on':'');
+  });
+}
+
+// ── שמירת דיווח ──
+async function submitReport(){
+  const today=new Date().toISOString().split('T')[0];
+  let row={emp_name:EMP,type:'',date:today,date_to:null,time_in:null,time_out:null,hours:null,note:null};
+  let msg='';
+
+  if(TYPE==='work'){
+    const tin=document.getElementById('t-in').value;
+    const tout=document.getElementById('t-out').value;
+    if(!tin){toast('נא להזין שעת כניסה','er');return;}
+    row.type='נוכחות';row.time_in=tin;
+    row.time_out=tout||null;
+    row.hours=tout?(calcH(tin,tout)||null):null;
+    row.note=document.getElementById('n-w').value||null;
+    msg='נוכחות '+today+(tin?' · כניסה '+tin:'')+(tout?' · יציאה '+tout:'')+(row.hours?' · '+row.hours+' שע':'');
+  } else if(TYPE==='sick'){
+    const f=document.getElementById('s-f').value;
+    const t=document.getElementById('s-t').value;
+    if(!f){toast('נא לבחור תאריך','er');return;}
+    row.type='מחלה';row.date=f;row.date_to=t||f;
+    row.note=document.getElementById('n-s').value||null;
+    msg='מחלה '+f+(t&&t!==f?' עד '+t:'');
+  } else {
+    const f=document.getElementById('v-f').value;
+    const t=document.getElementById('v-t').value;
+    if(!f){toast('נא לבחור תאריך','er');return;}
+    row.type='חופש';row.date=f;row.date_to=t||f;
+    row.note=document.getElementById('n-v').value||null;
+    msg='חופש '+f+(t&&t!==f?' עד '+t:'');
+  }
+
+  go('pg-load');
+
+  // העלאת קובץ אם קיים
+  let fileUrl = null;
+  const fileKey = TYPE==='work'?'w':TYPE==='sick'?'s':'v';
+  const fileInput = document.getElementById('f-'+fileKey);
+  if(fileInput && fileInput.files && fileInput.files[0]){
+    const file = fileInput.files[0];
+    const ext = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g,'');
+    const path = `report_${Date.now()}.${ext}`;
+    const {data:upData, error:upErr} = await sb.storage.from('files').upload(path, file, {upsert:true});
+    if(upErr){ console.warn('upload error:',upErr.message); }
+    else {
+      const {data:urlData} = sb.storage.from('files').getPublicUrl(path);
+      fileUrl = urlData.publicUrl;
+    }
+  }
+
+  row.file_url = fileUrl;
+  const {error}=await sb.from('reports').insert(row);
+  if(error){toast('שגיאה: '+error.message,'er');go('pg-rep');return;}
+  document.getElementById('ok-msg').textContent=msg;
+  go('pg-ok');
+}
+
+// ── היסטוריה עובד ──
+async function loadHist(){
+  go('pg-load');
+  const {data,error}=await sb.from('reports')
+    .select('*').eq('emp_name',EMP).order('date',{ascending:false});
+  if(error){toast('שגיאה','er');go('pg-rep');return;}
+  document.getElementById('hist-t').textContent='הדיווחים של '+EMP;
+  const w=data.filter(r=>r.type==='נוכחות').length;
+  const s=data.filter(r=>r.type==='מחלה').length;
+  const v=data.filter(r=>r.type==='חופש').length;
+  document.getElementById('hist-met').innerHTML=`
+    <div class="met mw"><div class="met-v">${w}</div><div class="met-l">נוכחות</div></div>
+    <div class="met ms"><div class="met-v">${s}</div><div class="met-l">מחלה</div></div>
+    <div class="met mv"><div class="met-v">${v}</div><div class="met-l">חופש</div></div>`;
+  const list=document.getElementById('hist-list');
+  const empty=document.getElementById('hist-empty');
+  if(!data.length){list.style.display='none';empty.style.display='block';}
+  else{
+    list.style.display='block';empty.style.display='none';
+    list.innerHTML=data.map(r=>`
+      <div class="hr">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:14px;font-weight:500">${r.date}${r.date_to&&r.date_to!==r.date?' — '+r.date_to:''}</span>
+          ${badge(r.type)}
+        </div>
+        <div style="font-size:13px;color:var(--mu)">
+          ${r.time_in?'כניסה: '+r.time_in:''}
+          ${r.time_out?' · יציאה: '+r.time_out:''}
+          ${r.hours?' · '+r.hours+' שע':''}
+          ${r.note?' · '+r.note:''}
+        </div>
+      </div>`).join('');
+  }
+  go('pg-hist');
+}
+
+// ── מנהל ──
+function adminLogin(){
+  const pass=document.getElementById('adm-pass').value;
+  if(pass!==ADM_PWD){toast('סיסמה שגויה','er');return;}
+  document.getElementById('adm-pass').value='';
+  document.getElementById('f-month').value=new Date().toISOString().slice(0,7);
+  loadAdmin();
+}
+
+async function loadAdmin(){
+  go('pg-load');
+  const {data,error}=await sb.from('reports').select('*').order('date',{ascending:false});
+  if(error){toast('שגיאה','er');return;}
+  ALL_REPORTS=data;
+  renderMetrics();
+  renderAll();
+  populateEmpFilter();
+  go('pg-adm');
+}
+
+function renderMetrics(){
+  const month=new Date().toISOString().slice(0,7);
+  const m=ALL_REPORTS.filter(r=>r.date&&r.date.startsWith(month));
+  document.getElementById('adm-met').innerHTML=`
+    <div class="met mw"><div class="met-v">${m.filter(r=>r.type==='נוכחות').length}</div><div class="met-l">נוכחות החודש</div></div>
+    <div class="met ms"><div class="met-v">${m.filter(r=>r.type==='מחלה').length}</div><div class="met-l">מחלה החודש</div></div>
+    <div class="met mv"><div class="met-v">${m.filter(r=>r.type==='חופש').length}</div><div class="met-l">חופש החודש</div></div>`;
+}
+
+function renderAll(){
+  const type=document.getElementById('f-type').value;
+  const month=document.getElementById('f-month').value;
+  const f=ALL_REPORTS.filter(r=>
+    (!type||r.type===type)&&
+    (!month||r.date.startsWith(month))
+  );
+  const wrap=document.getElementById('all-wrap');
+  if(!f.length){wrap.innerHTML='<div class="empty">אין דיווחים</div>';return;}
+  wrap.innerHTML=`<table>
+    <thead><tr><th>עובד</th><th>סוג</th><th>תאריך</th><th>כניסה</th><th>יציאה</th><th>שעות</th><th>הערה</th><th>קובץ</th></tr></thead>
+    <tbody>${f.map(r=>`<tr>
+      <td>${r.emp_name}</td>
+      <td>${badge(r.type)}</td>
+      <td>${r.date}${r.date_to&&r.date_to!==r.date?' — '+r.date_to:''}</td>
+      <td>${r.time_in||'—'}</td><td>${r.time_out||'—'}</td>
+      <td>${r.hours||'—'}</td>
+      <td style="color:var(--mu)">${r.note||''}</td>
+      <td>${r.file_url?`<a class="file-link" href="${r.file_url}" target="_blank">📎 פתח</a>`:'—'}</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function populateEmpFilter(){
+  const names=[...new Set(ALL_REPORTS.map(r=>r.emp_name))].sort();
+  const sel=document.getElementById('f-emp');
+  sel.innerHTML='<option value="">בחר עובד</option>'+names.map(n=>`<option value="${n}">${n}</option>`).join('');
+}
+
+function renderEmp(){
+  const name=document.getElementById('f-emp').value;
+  const wrap=document.getElementById('emp-wrap');
+  if(!name){wrap.innerHTML='<div class="empty">בחר עובד מהרשימה</div>';return;}
+  const data=ALL_REPORTS.filter(r=>r.emp_name===name);
+  const w=data.filter(r=>r.type==='נוכחות').length;
+  const s=data.filter(r=>r.type==='מחלה').length;
+  const v=data.filter(r=>r.type==='חופש').length;
+  wrap.innerHTML=`
+    <div class="mets">
+      <div class="met mw"><div class="met-v">${w}</div><div class="met-l">נוכחות</div></div>
+      <div class="met ms"><div class="met-v">${s}</div><div class="met-l">מחלה</div></div>
+      <div class="met mv"><div class="met-v">${v}</div><div class="met-l">חופש</div></div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>תאריך</th><th>סוג</th><th>כניסה</th><th>יציאה</th><th>שעות</th><th>הערה</th></tr></thead>
+      <tbody>${data.map(r=>`<tr>
+        <td>${r.date}${r.date_to&&r.date_to!==r.date?' — '+r.date_to:''}</td>
+        <td>${badge(r.type)}</td>
+        <td>${r.time_in||'—'}</td><td>${r.time_out||'—'}</td>
+        <td>${r.hours||'—'}</td>
+        <td style="color:var(--mu)">${r.note||''}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+function admTab(tab,btn){
+  document.querySelectorAll('.seg-b').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tab-all').style.display=tab==='all'?'block':'none';
+  document.getElementById('tab-emp').style.display=tab==='emp'?'block':'none';
+  if(tab==='emp'){populateEmpFilter();renderEmp();}
+}
+
+function exportCSV(){
+  if(!ALL_REPORTS.length){toast('אין נתונים','er');return;}
+  const rows=[['שם עובד','סוג','תאריך','תאריך סיום','כניסה','יציאה','שעות','הערה']];
+  ALL_REPORTS.forEach(r=>rows.push([r.emp_name,r.type,r.date,r.date_to||'',r.time_in||'',r.time_out||'',r.hours||'',r.note||'']));
+  const csv='\uFEFF'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='דיווח_שעות.csv';a.click();
+  toast('הקובץ הורד!','ok');
+}
+
+// ── file upload helpers ──
+function fileChosen(input, key){
+  const file = input.files[0];
+  if(file) showFilePreview(key, file.name);
+}
+function showFilePreview(key, name){
+  const el = document.getElementById('fp-'+key);
+  const icon = name.match(/\.(pdf)$/i)?'📄':name.match(/\.(doc|docx)$/i)?'📝':'🖼️';
+  el.style.display='flex';
+  el.innerHTML=`<div class="file-preview">
+    <span class="file-preview-icon">${icon}</span>
+    <span class="file-preview-name">${name}</span>
+    <button class="file-remove" onclick="removeFile('${key}')">✕</button>
+  </div>`;
+}
+function removeFile(key){
+  document.getElementById('f-'+key).value='';
+  document.getElementById('fp-'+key).style.display='none';
+  document.getElementById('fp-'+key).innerHTML='';
+}
+function dragOver(e,el){e.preventDefault();el.classList.add('drag');}
+function dragLeave(el){el.classList.remove('drag');}
+function dropFile(e,key){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag');
+  const file=e.dataTransfer.files[0];
+  if(!file) return;
+  const dt=new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('f-'+key).files=dt.files;
+  showFilePreview(key,file.name);
+}
+
+function calcH(a,b){
+  const[h1,m1]=a.split(':').map(Number),[h2,m2]=b.split(':').map(Number);
+  const m=(h2*60+m2)-(h1*60+m1);
+  return m>0?(m/60).toFixed(1):null;
+}
+function badge(t){
+  const c=t==='נוכחות'?'bw':t==='מחלה'?'bs':'bv';
+  return`<span class="badge ${c}">${t}</span>`;
+}
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className=type||'';el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),2600);
+}
+</script>
+</body>
+</html>
